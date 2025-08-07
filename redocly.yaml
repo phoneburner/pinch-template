@@ -1,0 +1,27 @@
+# Redocly CLI / Redoc Configuration File
+# Link: https://redocly.com/docs/cli/configuration
+
+extends:
+  - recommended-strict
+
+rules:
+  operation-2xx-response: off
+  operation-4xx-response: off
+  info-license: off
+  no-server-example.com: off
+  tag-description: off
+
+openapi:
+  showObjectSchemaExamples: true
+  jsonSampleExpandLevel: all
+  pathInMiddlePanel: true
+  onlyRequiredInSamples: true
+  expandSingleSchemaField: true
+  expandResponses: 200,201,204
+  theme:
+    logo:
+      maxHeight: 100px
+    sidebar:
+      width: 300px
+    rightPanel:
+      width: 55%

@@ -1,0 +1,11 @@
+openapi: 3.1.1
+info:
+  title: Example API
+  version: 1.0.0
+  x-logo:
+    url: "/images/logo.svg"
+    altText: "PhoneBurner"
+paths: {}
+servers:
+  - url: "http://localhost:8888"
+    description: Development

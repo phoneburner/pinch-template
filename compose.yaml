@@ -1,0 +1,131 @@
+services:
+  web:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      target: development-web
+      args:
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    platform: linux/amd64
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - php
+      - mysql
+      - redis
+    volumes:
+      - ./public:/app/public
+      - ./caddy:/etc/caddy
+      - caddy-data:/data
+      - caddy-config:/config
+    env_file:
+      - path: ./.env
+    ports:
+      - "${DOCKER_HOST_HTTP_PORT:-8888}:80"
+
+  php:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      target: development-php
+      args:
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    platform: linux/amd64
+    restart: unless-stopped
+    user: "dev"
+    volumes:
+      - ${SOURCE_DIR:-./}:/app
+      - ./php-development.ini:/usr/local/etc/php/conf.d/settings.ini
+    env_file:
+      - ./.env
+    environment:
+      PHP_IDE_CONFIG: "serverName=cli" # Used by PhpStorm for path mapping
+      COMPOSER_AUTH: '{"github-oauth": {"github.com":"${GITHUB_TOKEN}"}}'
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  message-consumer:
+    profiles:
+      - all
+    extends:
+      service: php
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    command: php ./bin/pinch messenger:consume --all --no-interaction --limit=100 --failure-limit=10 --memory-limit=128M --time-limit=600 --sleep=5
+
+  message-scheduler:
+    profiles:
+      - all
+    extends:
+      service: php
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    command: php ./bin/pinch messenger:schedule --all --no-interaction --limit=100 --failure-limit=10 --memory-limit=128M --time-limit=3600 --sleep=60
+
+  mysql:
+    image: mysql:8.0.36
+    platform: linux/amd64
+    ports:
+      - "${DOCKER_HOST_MYSQL_PORT:-3306}:3306"
+    volumes:
+      - ./database/seed/:/docker-entrypoint-initdb.d/
+      - ./database/dump/:/dump
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "${PINCH_MYSQL_ROOT_PASS:-pinch}"
+      MYSQL_DATABASE: "${PINCH_MYSQL_NAME:-pinch}"
+      MYSQL_USER: "${PINCH_MYSQL_USER:-pinch}"
+      MYSQL_PASSWORD: "${PINCH_MYSQL_PASS:-pinch}"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "--password=$$MYSQL_ROOT_PASS",
+          "--host",
+          "mysql",
+        ]
+      interval: 5s
+      timeout: 20s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7
+    platform: linux/amd64
+    ports:
+      - "${DOCKER_HOST_REDIS_PORT:-63791}:6379"
+    volumes:
+      - redis-data:/data:delegated
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    platform: linux/amd64
+    profiles:
+      - all
+    ports:
+      - "${DOCKER_HOST_MAILHOG_SMTP_PORT:-1025}:1025"
+      - "${DOCKER_HOST_MAILHOG_HTTP_PORT:-8025}:8025"
+
+volumes:
+  caddy-data:
+  caddy-config:
+  mysql-data:
+  redis-data:

@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use PhoneBurner\Pinch\Component\App\App as AppContract;
+use PhoneBurner\Pinch\Framework\App\App;
+use PhoneBurner\Pinch\Component\App\Kernel;
+use PhoneBurner\Pinch\Framework\Configuration\EnvironmentLoader;
+
+\array_any([
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../../../vendor/autoload.php',
+], static fn(string $file): bool => (bool)@include_once $file) ?: throw new \LogicException(
+    'Cannot Locate Composer Autoload File',
+);
+
+App::exec(EnvironmentLoader::instance(), static function (AppContract $app): void {
+    $app->get(Kernel::class)->run();
+});

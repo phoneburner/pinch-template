@@ -1,0 +1,80 @@
+{
+	log {
+		output stderr
+		format json
+	}
+}
+
+:80 {
+	root * /app/public
+	encode zstd gzip
+
+	# Block malicious requests probing for unsecured files by returning an empty
+	# HTTP 404 Not Found response. This approach is resource-efficient, and does
+	# not invoke the error handlers (configured in a handle_errors directive),
+	# as those could be used for legitimate error handling.
+	@malicious {
+		path *.env *.env.* *.aspx *.ini
+		path */eval-stdin.php
+		path */vendor/* */config/* */src/* */.git/* */wp-*
+	}
+
+	# The fallback handler for all requests that are not handled by other handler
+	# directives within this block. Requests are proxied to the PHP-FPM service
+	# running on port 9000 and the file server is enabled to serve static files.
+	# For any requests that with a path that starts with /api/, we attach the
+	# the standard "allow-all" CORS headers the response. Likewise, if the request
+	# is a CORS preflight request to a path that starts with /api/, we respond
+	# with a successful HTTP 204 No Content response.
+	@cors_preflight {
+		method OPTIONS
+	}
+
+	# Different headers for HTML pages (splash page and docs)
+	# By default, these rules are tailored to the splash page, e.g. allowing
+	# Google Fonts and inline styles, and should be adjusted on a per-project basis
+	@html_route {
+		path / /docs/* *.html
+	}
+
+	# TEMPLATE NOTE: Adjust API paths to match your routing structure
+	@api_route {
+		path /api/* /api
+	}
+
+	handle @malicious {
+		respond 404
+	}
+
+	handle {
+		header {
+			Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+			X-Content-Type-Options "nosniff"
+			X-Permitted-Cross-Domain-Policies "none"
+			-Server
+		}
+
+		handle @html_route {
+			header {
+				X-Frame-Options "DENY"
+				Referrer-Policy "strict-origin-when-cross-origin"
+				Content-Security-Policy "default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none';"
+			}
+		}
+
+		handle @api_route {
+			header {
+				# PRODUCTION SECURITY: Replace * with specific allowed origins
+				Access-Control-Allow-Origin *
+				Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+				Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+				Access-Control-Max-Age 86400
+			}
+
+			respond @cors_preflight 204
+		}
+
+		php_fastcgi php:9000
+		file_server
+	}
+}
