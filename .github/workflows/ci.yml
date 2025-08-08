@@ -8,14 +8,65 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    if: github.repository == 'phoneburner/pinch-template'
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run Code Quality Checks
+      - name: Log in to GitHub Container Registry
+        if: github.repository == 'phoneburner/pinch-template'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Image - pinch-php
+        uses: docker/build-push-action@v6
+        with:
+          context: ./packages/template
+          file: ./packages/template/Dockerfile
+          target: development-php
+          tags: ghcr.io/${{ github.repository }}-php:latest # not pushed, just used locally
+          cache-from: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-php' || '' }}
+          cache-to: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-php,mode=max' || '' }}
+          load: true
+
+      - name: Build Image - pinch-web
+        uses: docker/build-push-action@v6
+        with:
+          context: ./packages/template
+          file: ./packages/template/Dockerfile
+          target: development-web
+          tags: ghcr.io/${{ github.repository }}-web:latest # not pushed, just used locally
+          cache-from: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-web' || '' }}
+          cache-to: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-web,mode=max' || '' }}
+          load: true
+
+      - name: Build Image - pinch-prettier
+        uses: docker/build-push-action@v6
+        with:
+          context: ./packages/template
+          file: ./packages/template/Dockerfile
+          target: prettier
+          tags: ghcr.io/${{ github.repository }}-prettier:latest # not pushed, just used locally
+          cache-from: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-prettier' || '' }}
+          cache-to: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-prettier,mode=max' || '' }}
+          load: true
+
+      - name: Build Application
         run: |
           cp .env.dist .env;
           sed -i "s/^GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" ".env";
           sed -i "s%^PINCH_APP_KEY=.*%PINCH_APP_KEY=$(head -c 32 /dev/urandom | base64)%" ".env";
-          make -j && make ci;
+          make -j
+
+      - name: Run Code Quality Checks
+        run: make ci;

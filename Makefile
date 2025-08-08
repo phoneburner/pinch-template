@@ -91,7 +91,7 @@ BUILD_DIRS = build/.phpunit.cache \
 # Docker Targets
 ##------------------------------------------------------------------------------
 
-build/docker/docker-compose.json: packages/template/Dockerfile compose.yaml | build/docker
+build/docker/docker-compose.json: Dockerfile compose.yaml | build/docker
 	docker compose pull --quiet --ignore-buildable
 	COMPOSE_BAKE=true docker compose build --pull
 	touch "$@" # required to consistently update the file mtime
