@@ -1,12 +1,10 @@
 services:
   web:
+    image: ghcr.io/phoneburner/phoneburner/pinch-web:latest
     build:
       context: ./
       dockerfile: Dockerfile
       target: development-web
-      args:
-        USER_UID: ${UID:-1000}
-        USER_GID: ${GID:-1000}
     platform: linux/amd64
     restart: unless-stopped
     cap_add:
@@ -26,13 +24,11 @@ services:
       - "${DOCKER_HOST_HTTP_PORT:-8888}:80"
 
   php:
+    image: ghcr.io/phoneburner/pinch-php:latest
     build:
       context: ./
       dockerfile: Dockerfile
       target: development-php
-      args:
-        USER_UID: ${UID:-1000}
-        USER_GID: ${GID:-1000}
     platform: linux/amd64
     restart: unless-stopped
     user: "dev"

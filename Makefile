@@ -3,6 +3,9 @@ SHELL := bash
 .DEFAULT_GOAL := build/.install
 .WAIT:
 
+# Detect operating system
+OS := $(shell uname -s)
+
 _WARN := "\033[33m%s\033[0m %s\n"  # Yellow text template for "printf"
 _INFO := "\033[32m%s\033[0m %s\n" # Green text template for "printf"
 _ERROR := "\033[31m%s\033[0m %s\n" # Red text template for "printf"
@@ -88,12 +91,9 @@ BUILD_DIRS = build/.phpunit.cache \
 # Docker Targets
 ##------------------------------------------------------------------------------
 
-build/docker/docker-compose.json: Dockerfile compose.yaml | build/docker
-	docker compose pull --quiet --policy="always"
-	COMPOSE_BAKE=true docker compose build \
-		--pull \
-		--build-arg USER_UID=$$(id -u) \
-		--build-arg USER_GID=$$(id -g)
+build/docker/docker-compose.json: packages/template/Dockerfile compose.yaml | build/docker
+	docker compose pull --quiet --ignore-buildable
+	COMPOSE_BAKE=true docker compose build --pull
 	touch "$@" # required to consistently update the file mtime
 
 build/docker/pinch-%.json: Dockerfile | build/docker
@@ -114,16 +114,16 @@ phpunit.xml:
 	@$(call copy-safe,phpunit.dist.xml,phpunit.xml)
 
 $(BUILD_DIRS): | .env phpstan.neon phpunit.xml
-	mkdir --parents "$@"
+	mkdir -p "$@"
 
 composer.lock: build/composer build/docker/docker-compose.json composer.json composer.lock | .env
-	mkdir --parents "$@"
+	mkdir -p "$@"
 	@$(call check-token,GITHUB_TOKEN)
 	$(docker-php) composer install
 	@touch vendor
 
 vendor: composer.lock
-	mkdir --parents "$@"
+	mkdir -p "$@"
 	@$(call check-token,GITHUB_TOKEN)
 	$(docker-php) composer install
 	@touch vendor
@@ -139,7 +139,7 @@ clean:
 # The build target dependencies must be set as "order-only" prerequisites to prevent
 # the target from being rebuilt everytime the dependencies are updated.
 build: vendor | phpstan.neon phpunit.xml .env
-	@$(app) mkdir --parents build
+	@$(app) mkdir -p build
 	@touch build
 
 .PHONY: clean

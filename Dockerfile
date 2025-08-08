@@ -32,15 +32,9 @@ ENTRYPOINT ["prettier"]
 ##------------------------------------------------------------------------------
 
 FROM php:8.4-fpm AS php-base
-ARG USER_UID=1000
-ARG USER_GID=1000
 WORKDIR /
 SHELL ["/bin/bash", "-c"]
 ENV PATH="/app/bin:/app/vendor/bin:/app/build/composer/bin:$PATH"
-
-# Create a non-root user to run the application
-RUN groupadd --gid $USER_GID dev \
-    && useradd --uid $USER_UID --gid $USER_GID --groups www-data --create-home --shell /bin/bash dev
 
 # Update the package list and install the latest version of the packages
 RUN --mount=type=cache,target=/var/lib/apt,sharing=locked apt-get update && apt-get dist-upgrade --yes
@@ -103,19 +97,35 @@ COPY --link --from=libsodium /usr/local/include/sodium.h /usr/local/include/
 COPY --link --from=libsodium /usr/local/lib/libsodium.* /usr/local/lib/
 COPY --link --from=libsodium /usr/local/lib/pkgconfig /usr/local/lib/pkgconfig
 RUN docker-php-ext-install -j$(nproc) sodium
-RUN chown -R dev:dev /app /home/dev
 
 FROM php-common AS development-php
 ENV SALT_BUILD_STAGE="development"
 ENV XDEBUG_MODE="off"
+ARG USER_UID=1000
+ARG USER_GID=1000
+RUN <<-EOF
+  set -eux
+  mkdir -p /home/dev/.composer
+  groupadd --gid ${USER_GID} dev
+  useradd --uid ${USER_UID} --gid ${USER_GID} --groups www-data --no-create-home --home /home/dev --shell /bin/bash dev
+  chown -R dev:dev /app /home/dev
+EOF
 COPY --link php-development.ini /usr/local/etc/php/conf.d/settings.ini
 COPY --link --from=composer/composer /usr/bin/composer /usr/local/bin/composer
 COPY --link --chown=$USER_UID:$USER_GID --from=composer/composer /tmp/* /home/dev/.composer/
-RUN docker-php-ext-enable xdebug
 USER dev
 
 FROM php-common AS production-php-stage-0
 ENV SALT_BUILD_STAGE="production"
+ARG USER_UID=1000
+ARG USER_GID=1000
+RUN <<-EOF
+  set -eux
+  mkdir -p /home/dev/.composer
+  groupadd --gid ${USER_GID} dev
+  useradd --uid ${USER_UID} --gid ${USER_GID} --groups www-data --no-create-home --home /home/dev --shell /bin/bash dev
+  chown -R dev:dev /app /home/dev
+EOF
 COPY --link php-production.ini /usr/local/etc/php/conf.d/settings.ini
 COPY --link --chown=$USER_UID:$USER_GID ./bin /app/bin
 COPY --link --chown=$USER_UID:$USER_GID ./config /app/config
@@ -138,6 +148,7 @@ RUN --mount=type=bind,from=composer/composer,source=/usr/bin/composer,target=/us
     [ -n "${GITHUB_TOKEN}" ] && composer config --global github-oauth.github.com ${GITHUB_TOKEN}
     export SALT_APP_KEY=$(head -c 32 /dev/urandom | base64) # temporary key for build
     composer install --classmap-authoritative --no-dev
+    composer audit # Fail the build if vulnerabilities are found (can be adjusted with --ignore-severity option)
     salt orm:generate-proxies
     salt routing:cache
 
