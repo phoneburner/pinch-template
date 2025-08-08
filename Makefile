@@ -16,7 +16,6 @@ _ERROR := "\033[31m%s\033[0m %s\n" # Red text template for "printf"
 
 docker-php = docker compose run --rm --user=$$(id -u):$$(id -g) php
 docker-run = docker run --rm --env-file "$${PWD}/.env" --user=$$(id -u):$$(id -g)
-redocly-cli := $(docker-run) --volume $${PWD}:/spec redocly/cli
 
 # Define behavior to safely source file (1) to dist file (2), without overwriting
 # if the dist file already exists. This is more portable than using `cp --no-clobber`.
@@ -137,7 +136,7 @@ composer.lock vendor: build/composer build/docker/docker-compose.json composer.j
 	$(docker-php) composer install
 	@touch vendor composer.lock
 
-build/.install: $(BUILD_DIRS) build/docker/docker-compose.json vendor build/.migrations | .env phpunit.xml phpstan.neon
+build/.install: $(BUILD_DIRS) build/docker/docker-compose.json vendor build/.migrations | .env phpunit.xml phpstan.neon resources/views/openapi.json resources/views/openapi.html
 	@$(call generate-key,PINCH_APP_KEY)
 	@echo "Application Build Complete."
 	@touch build/.install
@@ -148,7 +147,7 @@ build/.migrations: database/migrations/*
 
 .PHONY: clean
 clean:
-	$(docker-php) rm -rf ./build ./vendor/ ./public/phpunit
+	$(docker-php) rm -rf ./build ./vendor/ ./public/phpunit resources/views/openapi.html resources/views/openapi.json
 	$(docker-php) find /app/storage/ -type f -not -name .gitignore -delete
 
 ##------------------------------------------------------------------------------
@@ -201,8 +200,8 @@ serve-coverage:
 ##------------------------------------------------------------------------------
 
 .PHONY: prettier-%
-prettier-%: | build/docker/pinch-prettier.json
-	$(docker-run) --volume $${PWD}:/app --user=$$(id -u):$$(id -g) pinch-prettier --$* .
+prettier-%: | build/.install
+	$(docker-run) --volume $${PWD}:/app --user=$$(id -u):$$(id -g) ghcr.io/phoneburner/pinch-prettier --$* .
 
 
 ##------------------------------------------------------------------------------
@@ -210,14 +209,14 @@ prettier-%: | build/docker/pinch-prettier.json
 ##-----------------------------------------------------------------------------_
 
 .PHONY: openapi-lint
-openapi-lint: openapi.yaml | build/docker/redocly/cli/latest.json
-	$(redocly-cli) lint --format="github-actions" openapi.yaml
+openapi-lint: openapi.yaml
+	$(docker-run) --volume $${PWD}:/spec redocly/cli lint --format="github-actions" openapi.yaml
 
 .PHONY: openapi-docs
 openapi-docs: resources/views/openapi.json resources/views/openapi.html
 
-resources/views/openapi.%: openapi.yaml redocly.yaml | build/docker/redocly/cli/latest.json
-	$(redocly-cli) $(if $(filter json,$*),bundle,build-docs) openapi.yaml --output="$@"
+resources/views/openapi.%: openapi.yaml redocly.yaml
+	$(docker-run) --volume $${PWD}:/spec redocly/cli $(if $(filter json,$*),bundle,build-docs) openapi.yaml --output="$@"
 
 ##------------------------------------------------------------------------------
 # Enable Makefile Overrides
