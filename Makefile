@@ -16,6 +16,7 @@ _ERROR := "\033[31m%s\033[0m %s\n" # Red text template for "printf"
 
 docker-php = docker compose run --rm php
 docker-run = docker run --rm --env-file "$${PWD}/.env" --user=$$(id -u):$$(id -g)
+redocly-cli := $(docker-run) --volume $${PWD}:/spec redocly/cli
 
 # Define behavior to safely source file (1) to dist file (2), without overwriting
 # if the dist file already exists. This is more portable than using `cp --no-clobber`.
@@ -104,6 +105,9 @@ build/docker/pinch-%.json: Dockerfile | build/docker
 # Build/Setup/Teardown Targets
 ##------------------------------------------------------------------------------
 
+$(BUILD_DIRS): | .env phpstan.neon phpunit.xml
+	mkdir -p "$@"
+
 .env:
 	@$(call copy-safe,.env.dist,.env)
 
@@ -113,39 +117,24 @@ phpstan.neon:
 phpunit.xml:
 	@$(call copy-safe,phpunit.dist.xml,phpunit.xml)
 
-$(BUILD_DIRS): | .env phpstan.neon phpunit.xml
-	mkdir -p "$@"
-
-composer.lock: build/composer build/docker/docker-compose.json composer.json composer.lock | .env
+composer.lock vendor: build/composer build/docker/docker-compose.json composer.json | build .env
 	mkdir -p "$@"
 	@$(call check-token,GITHUB_TOKEN)
 	$(docker-php) composer install
-	@touch vendor
+	@touch vendor composer.lock
 
-vendor: composer.lock
-	mkdir -p "$@"
-	@$(call check-token,GITHUB_TOKEN)
-	$(docker-php) composer install
-	@touch vendor
-
-build/.install : vendor build/docker/pinch-prettier.json | $(BUILD_DIRS)
+build/.install: $(BUILD_DIRS) build/docker/docker-compose.json vendor build/.migrations | .env phpunit.xml phpstan.neon
 	@echo "Application Build Complete."
 	@touch build/.install
 
-.PHONY: clean
-clean:
-	$(docker-php) rm -rf ./build ./vendor ./storage
-
-# The build target dependencies must be set as "order-only" prerequisites to prevent
-# the target from being rebuilt everytime the dependencies are updated.
-build: vendor | phpstan.neon phpunit.xml .env
-	@$(app) mkdir -p build
-	@touch build
+build/.migrations: database/migrations/*
+	docker compose up --detach --wait --wait-timeout=30
+	$(docker-php) pinch migrations:migrate --no-interaction && touch $@
 
 .PHONY: clean
 clean:
-	$(app) rm -rf ./build ./vendor
-	$(app) find /app/ -type f -not -name .gitignore -delete
+	$(docker-php) rm -rf ./build ./vendor/ ./public/phpunit
+	$(docker-php) find /app/storage/ -type f -not -name .gitignore -delete
 
 ##------------------------------------------------------------------------------
 # Code Quality, Testing & Utility Targets
@@ -167,7 +156,7 @@ bash: build/docker/docker-compose.json
 .PHONY: shell psysh
 shell psysh: build/.install
 	docker compose up --detach
-	$(docker-php) salt shell
+	$(docker-php) pinch shell
 
 .PHONY: lint phpcbf phpcs phpstan rector rector-dry-run
 lint phpcbf phpcs phpstan rector rector-dry-run: build/.install
@@ -189,7 +178,7 @@ pre-ci preci: prettier-write rector phpcbf ci
 # Run the PHP development server to serve the HTML test coverage report on port 8000.
 .PHONY: serve-coverage
 serve-coverage:
-	@docker compose run --rm --publish 8000:80 php php -S 0.0.0.0:80 -t /app/build/phpunit
+	@docker compose run --rm --publish 8000:80 ghcr.io/phoneburner/pinch-php php -S 0.0.0.0:80 -t /app/build/phpunit
 
 ##------------------------------------------------------------------------------
 # Prettier Code Formatter for JSON, YAML, HTML, Markdown, and CSS Files
@@ -199,6 +188,20 @@ serve-coverage:
 .PHONY: prettier-%
 prettier-%: | build/docker/pinch-prettier.json
 	$(docker-run) --volume $${PWD}:/app pinch-prettier --$* .
+
+##------------------------------------------------------------------------------
+# Redocly OpenAPI Validation and Documentation Generation
+##-----------------------------------------------------------------------------_
+
+.PHONY: openapi-lint
+openapi-lint: openapi.yaml | build/docker/redocly/cli/latest.json
+	$(redocly-cli) lint --format="github-actions" openapi.yaml
+
+.PHONY: openapi-docs
+openapi-docs: resources/views/openapi.json resources/views/openapi.html
+
+resources/views/openapi.%: openapi.yaml redocly.yaml | build/docker/redocly/cli/latest.json
+	$(redocly-cli) $(if $(filter json,$*),bundle,build-docs) openapi.yaml --output="$@"
 
 ##------------------------------------------------------------------------------
 # Enable Makefile Overrides
