@@ -31,8 +31,8 @@ jobs:
       - name: Build Image - pinch-php
         uses: docker/build-push-action@v6
         with:
-          context: ./packages/template
-          file: ./packages/template/Dockerfile
+          context: .
+          file: .Dockerfile
           target: development-php
           tags: ghcr.io/${{ github.repository }}-php:latest # not pushed, just used locally
           cache-from: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-php' || '' }}
@@ -42,8 +42,8 @@ jobs:
       - name: Build Image - pinch-web
         uses: docker/build-push-action@v6
         with:
-          context: ./packages/template
-          file: ./packages/template/Dockerfile
+          context: .
+          file: .Dockerfile
           target: development-web
           tags: ghcr.io/${{ github.repository }}-web:latest # not pushed, just used locally
           cache-from: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-web' || '' }}
@@ -53,8 +53,8 @@ jobs:
       - name: Build Image - pinch-prettier
         uses: docker/build-push-action@v6
         with:
-          context: ./packages/template
-          file: ./packages/template/Dockerfile
+          context: .
+          file: .Dockerfile
           target: prettier
           tags: ghcr.io/${{ github.repository }}-prettier:latest # not pushed, just used locally
           cache-from: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-prettier' || '' }}
