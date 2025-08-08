@@ -9,16 +9,16 @@
     "phoneburner/composer-replacements": "^1.0.0",
     "phoneburner/http-tortilla": "^2.0.0",
     "phoneburner/link-tortilla": "^1.0.0",
-    "phoneburner/pinch-component": "^0.0.13",
-    "phoneburner/pinch-core": "^0.0.13",
-    "phoneburner/pinch-framework": "^0.0.13"
+    "phoneburner/pinch-component": "^0.0.14",
+    "phoneburner/pinch-core": "^0.0.14",
+    "phoneburner/pinch-framework": "^0.0.14"
   },
   "require-dev": {
     "behat/behat": "^3.23.0",
     "eventsauce/test-utilities": "dev-main",
     "league/openapi-psr7-validator": "^0.22.0",
     "phoneburner/coding-standard": "^1.0.0",
-    "phoneburner/pinch-phpstan": "^0.0.13",
+    "phoneburner/pinch-phpstan": "^0.0.14",
     "php-parallel-lint/php-parallel-lint": "^1.4",
     "phpunit/phpunit": "^12.2.7",
     "rector/rector": "^2.1.2",
@@ -58,7 +58,11 @@
     "phpunit": "@php vendor/bin/phpunit",
     "phpunit-coverage": "@php vendor/bin/phpunit --coverage-html=build/phpunit",
     "rector": "@php vendor/bin/rector process",
-    "rector-dry-run": "@php vendor/bin/rector process --dry-run"
+    "rector-dry-run": "@php vendor/bin/rector process --dry-run",
+    "test": [
+      "@paratest",
+      "@behat"
+    ]
   },
   "config": {
     "allow-plugins": {
