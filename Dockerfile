@@ -99,7 +99,7 @@ COPY --link --from=libsodium /usr/local/lib/pkgconfig /usr/local/lib/pkgconfig
 RUN docker-php-ext-install -j$(nproc) sodium
 
 FROM php-common AS development-php
-ENV SALT_BUILD_STAGE="development"
+ENV PINCH_BUILD_STAGE="development"
 ENV XDEBUG_MODE="off"
 ARG USER_UID=1000
 ARG USER_GID=1000
@@ -116,7 +116,7 @@ COPY --link --chown=$USER_UID:$USER_GID --from=composer/composer /tmp/* /home/de
 USER dev
 
 FROM php-common AS production-php-stage-0
-ENV SALT_BUILD_STAGE="production"
+ENV PINCH_BUILD_STAGE="production"
 ARG USER_UID=1000
 ARG USER_GID=1000
 RUN <<-EOF
@@ -146,7 +146,7 @@ RUN --mount=type=bind,from=composer/composer,source=/usr/bin/composer,target=/us
     find /app/storage -type d -exec chmod 0777 {} \;
     find /app/storage -type f -exec chmod 0666 {} \;
     [ -n "${GITHUB_TOKEN}" ] && composer config --global github-oauth.github.com ${GITHUB_TOKEN}
-    export SALT_APP_KEY=$(head -c 32 /dev/urandom | base64) # temporary key for build
+    export PINCH_APP_KEY=$(head -c 32 /dev/urandom | base64) # temporary key for build
     composer install --classmap-authoritative --no-dev
     composer audit # Fail the build if vulnerabilities are found (can be adjusted with --ignore-severity option)
     salt orm:generate-proxies

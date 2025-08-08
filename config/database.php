@@ -60,7 +60,7 @@ return [
                             'table_name' => 'doctrine_migration_versions',
                         ],
                         migrations_paths: [
-                            'PhoneBurner\Pinch\Migrations' => path('/database/migrations'),
+                            'App\Migrations' => path('/database/migrations'),
                         ],
                     ),
                     server_version: env('PINCH_MYSQL_SERVER_VERSION', '8.0.36'),
