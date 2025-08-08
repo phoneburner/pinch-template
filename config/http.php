@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use App\ApplicationRouteProvider;
 use PhoneBurner\Pinch\Component\Http\Response\Exceptional\TransformerStrategies\JsonResponseTransformerStrategy;
 use PhoneBurner\Pinch\Component\Http\Routing\RequestHandler\NotFoundRequestHandler;
-use PhoneBurner\Pinch\Framework\ApplicationRouteProvider;
 use PhoneBurner\Pinch\Framework\Http\Config\HttpConfigStruct;
 use PhoneBurner\Pinch\Framework\Http\Config\RoutingConfigStruct;
 use PhoneBurner\Pinch\Framework\Http\Config\SessionConfigStruct;
@@ -29,8 +29,7 @@ return [
             enable_cache: (bool)env('PINCH_ENABLE_ROUTE_CACHE', true, false),
             cache_path: path('/storage/bootstrap/routes.cache.php'),
             route_providers: [
-                // Application Route Providers
-                ApplicationRouteProvider::class, // IMPORTANT: replace this default with the application version
+                ApplicationRouteProvider::class,
             ],
             fallback_handler: NotFoundRequestHandler::class,
         ),

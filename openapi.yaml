@@ -3,8 +3,8 @@ info:
   title: Example API
   version: 1.0.0
   x-logo:
-    url: "/images/logo.svg"
-    altText: "PhoneBurner"
+    url: "/images/pinch.svg"
+    altText: "Pinch Framework"
 paths: {}
 servers:
   - url: "http://localhost:8888"
