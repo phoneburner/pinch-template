@@ -32,7 +32,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: .Dockerfile
+          file: ./Dockerfile
           target: development-php
           tags: ghcr.io/${{ github.repository }}-php:latest # not pushed, just used locally
           cache-from: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-php' || '' }}
@@ -43,7 +43,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: .Dockerfile
+          file: ./Dockerfile
           target: development-web
           tags: ghcr.io/${{ github.repository }}-web:latest # not pushed, just used locally
           cache-from: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-web' || '' }}
@@ -54,7 +54,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: .Dockerfile
+          file: ./Dockerfile
           target: prettier
           tags: ghcr.io/${{ github.repository }}-prettier:latest # not pushed, just used locally
           cache-from: ${{ github.repository == 'phoneburner/pinch-template' && 'type=gha,scope=phoneburner/pinch-prettier' || '' }}
