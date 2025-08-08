@@ -14,7 +14,7 @@ _ERROR := "\033[31m%s\033[0m %s\n" # Red text template for "printf"
 # Command Aliases & Function/Variable Definitions
 ##------------------------------------------------------------------------------
 
-docker-php = docker compose run --rm php
+docker-php = docker compose run --rm --user=$$(id -u):$$(id -g) php
 docker-run = docker run --rm --env-file "$${PWD}/.env" --user=$$(id -u):$$(id -g)
 redocly-cli := $(docker-run) --volume $${PWD}:/spec redocly/cli
 
@@ -93,9 +93,16 @@ BUILD_DIRS = build/.phpunit.cache \
 ##------------------------------------------------------------------------------
 
 build/docker/docker-compose.json: Dockerfile compose.yaml | build/docker
+# Skip USER_UID and USER_GID on Mac OS to avoid compatibility issues
+ifeq ($(OS),Darwin)
 	docker compose pull --quiet --ignore-buildable
 	COMPOSE_BAKE=true docker compose build --pull
 	touch "$@" # required to consistently update the file mtime
+else
+	docker compose pull --quiet --ignore-buildable
+	COMPOSE_BAKE=true docker compose build --pull --build-arg USER_UID=$$(id -u) --build-arg USER_GID=$$(id -g)
+	touch "$@" # required to consistently update the file mtime
+endif
 
 build/docker/pinch-%.json: Dockerfile | build/docker
 	docker buildx build --target="$*" --pull --load --tag="pinch-$*" --file Dockerfile .
@@ -160,16 +167,16 @@ shell psysh: build/.install
 
 .PHONY: lint phpcbf phpcs phpstan rector rector-dry-run
 lint phpcbf phpcs phpstan rector rector-dry-run: build/.install
-	docker compose run --rm -e XDEBUG_MODE=off php composer run-script "$@"
+	docker compose run --rm --user=$$(id -u):$$(id -g) -e XDEBUG_MODE=off php composer run-script "$@"
 
 .PHONY: phpunit phpunit-coverage test behat paratest paratest-coverage
 phpunit phpunit-coverage test behat paratest paratest-coverage: build/.install
 	docker compose up --detach
-	docker compose run --rm -e XDEBUG_MODE=off php composer run-script "$@"
+	docker compose run --rm --user=$$(id -u):$$(id -g) -e XDEBUG_MODE=off php composer run-script "$@"
 
 .NOTPARALLEL: ci pre-ci preci
 .PHONY: ci pre-ci preci
-ci: lint phpcs phpstan phpunit prettier-check rector-dry-run
+ci: lint phpcs phpstan test prettier-check rector-dry-run
 
 .NOTPARALLEL: pre-ci preci
 .PHONY: pre-ci preci
@@ -187,7 +194,8 @@ serve-coverage:
 
 .PHONY: prettier-%
 prettier-%: | build/docker/pinch-prettier.json
-	$(docker-run) --volume $${PWD}:/app pinch-prettier --$* .
+	$(docker-run) --volume $${PWD}:/app --user=$$(id -u):$$(id -g) pinch-prettier --$* .
+
 
 ##------------------------------------------------------------------------------
 # Redocly OpenAPI Validation and Documentation Generation

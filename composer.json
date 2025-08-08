@@ -9,16 +9,16 @@
     "phoneburner/composer-replacements": "^1.0.0",
     "phoneburner/http-tortilla": "^2.0.0",
     "phoneburner/link-tortilla": "^1.0.0",
-    "phoneburner/pinch-component": "^0.0.11",
-    "phoneburner/pinch-core": "^0.0.11",
-    "phoneburner/pinch-framework": "^0.0.11"
+    "phoneburner/pinch-component": "^0.0.12",
+    "phoneburner/pinch-core": "^0.0.12",
+    "phoneburner/pinch-framework": "^0.0.12"
   },
   "require-dev": {
     "behat/behat": "^3.23.0",
     "eventsauce/test-utilities": "dev-main",
     "league/openapi-psr7-validator": "^0.22.0",
     "phoneburner/coding-standard": "^1.0.0",
-    "phoneburner/pinch-phpstan": "^0.0.11",
+    "phoneburner/pinch-phpstan": "^0.0.12",
     "php-parallel-lint/php-parallel-lint": "^1.4",
     "phpunit/phpunit": "^12.2.7",
     "rector/rector": "^2.1.2",

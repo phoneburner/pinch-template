@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/phoneburner/phoneburner/pinch-web:latest
+    image: ghcr.io/phoneburner/pinch-web:latest
     build:
       context: ./
       dockerfile: Dockerfile
@@ -19,7 +19,7 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     env_file:
-      - path: ./.env
+      - ./.env
     ports:
       - "${DOCKER_HOST_HTTP_PORT:-8888}:80"
 
