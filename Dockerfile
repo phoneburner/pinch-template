@@ -4,11 +4,9 @@
 ##------------------------------------------------------------------------------
 
 FROM ghcr.io/phoneburner/pinch-web:latest AS production-web
-ARG PINCH_GIT_COMMIT="undefined"
-ENV PINCH_GIT_COMMIT=${PINCH_GIT_COMMIT}
 COPY --link caddy/ /etc/caddy/
-RUN caddy fmt --overwrite /etc/caddy/Caddyfile
 COPY --link ./public /app/public
+RUN caddy fmt --overwrite /etc/caddy/Caddyfile
 
 ##------------------------------------------------------------------------------
 # PHP Build Stages
@@ -44,6 +42,8 @@ COPY --link --chown=$USER_UID:$USER_GID ./openapi.yaml /app/openapi.yaml
 USER dev
 
 # Install Composer dependencies and generate application files
+ARG PINCH_GIT_COMMIT="undefined"
+ENV PINCH_GIT_COMMIT=${PINCH_GIT_COMMIT}
 RUN --mount=type=cache,mode=0777,uid=$USER_UID,gid=$USER_GID,target=/app/build/composer \
     --mount=type=secret,id=GITHUB_TOKEN,env=GITHUB_TOKEN,required=false <<-EOF
     set -eux
@@ -58,7 +58,7 @@ RUN --mount=type=cache,mode=0777,uid=$USER_UID,gid=$USER_GID,target=/app/build/c
     pinch routing:cache
 
     # Set the application version in the welcome view
-    sed -i "s/v.0.0.0/v.0.0.0-${GIT_COMMIT:0:9}/" "/app/resources/views/welcome.html"
+    sed -i "s/v.0.0.0/v.0.0.0-${PINCH_GIT_COMMIT:0:9}/" "/app/resources/views/welcome.html"
 
     # Remove the storage cache and auth.json file to avoid baking the them into the build
     rm -f /app/storage/bootstrap/config.cache.php
