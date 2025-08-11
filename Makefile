@@ -103,10 +103,6 @@ else
 	touch "$@" # required to consistently update the file mtime
 endif
 
-build/docker/pinch-%.json: Dockerfile | build/docker
-	docker buildx build --target="$*" --pull --load --tag="pinch-$*" --file Dockerfile .
-	docker image inspect "pinch-$*" > "$@"
-
 build/docker/%.json: | build/docker
 	@image=$(patsubst %/,%,$(dir $*)):$(notdir $*)
 	mkdir -p $(dir $@)
