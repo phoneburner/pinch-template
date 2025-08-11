@@ -6,7 +6,7 @@ namespace App\Tests\Unit\TestSupport;
 
 use PhoneBurner\Pinch\Component\Cache\Lock\Lock;
 use PhoneBurner\Pinch\Component\Cache\Lock\SharedLockMode;
-use PhoneBurner\Pinch\Time\TimeInterval\TimeInterval;
+use PhoneBurner\Pinch\Time\Interval\TimeInterval;
 
 class SpyLock implements Lock
 {

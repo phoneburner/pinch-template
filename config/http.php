@@ -16,7 +16,7 @@ use PhoneBurner\Pinch\Framework\Http\Routing\Middleware\AttachRouteToRequest;
 use PhoneBurner\Pinch\Framework\Http\Routing\Middleware\DispatchRouteMiddleware;
 use PhoneBurner\Pinch\Framework\Http\Routing\Middleware\DispatchRouteRequestHandler;
 use PhoneBurner\Pinch\Framework\Http\Session\SessionHandlerType;
-use PhoneBurner\Pinch\Time\TimeInterval\TimeInterval;
+use PhoneBurner\Pinch\Time\Interval\TimeInterval;
 
 use function PhoneBurner\Pinch\Framework\env;
 use function PhoneBurner\Pinch\Framework\path;

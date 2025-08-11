@@ -8,7 +8,7 @@ use App\Example\Message\ExampleMessage;
 use PhoneBurner\Pinch\Component\Cache\CacheKey;
 use PhoneBurner\Pinch\Component\Cache\Lock\LockFactory;
 use PhoneBurner\Pinch\Framework\MessageBus\Transport;
-use PhoneBurner\Pinch\Time\TimeInterval\TimeInterval;
+use PhoneBurner\Pinch\Time\Interval\TimeInterval;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Cache\Adapter\ProxyAdapter;
