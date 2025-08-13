@@ -7,6 +7,8 @@ use PhoneBurner\Pinch\Component\MessageBus\Message\InvokableMessage;
 use PhoneBurner\Pinch\Component\MessageBus\MessageBus;
 use PhoneBurner\Pinch\Framework\Database\Doctrine\ConnectionFactory;
 use PhoneBurner\Pinch\Framework\Database\Redis\RedisManager;
+use PhoneBurner\Pinch\Framework\HttpClient\Webhook\Message\SimpleEventWebhookDeliveryMessage;
+use PhoneBurner\Pinch\Framework\HttpClient\Webhook\MessageHandler\WebhookDeliveryMessageHandler;
 use PhoneBurner\Pinch\Framework\MessageBus\Config\BusConfigStruct;
 use PhoneBurner\Pinch\Framework\MessageBus\Config\MessageBusConfigStruct;
 use PhoneBurner\Pinch\Framework\MessageBus\Config\TransportConfigStruct;
@@ -51,11 +53,15 @@ return [
             RunProcessMessage::class => [
                 RunProcessMessageHandler::class,
             ],
+            SimpleEventWebhookDeliveryMessage::class => [
+                WebhookDeliveryMessageHandler::class,
+            ],
         ],
         routing: [ // messages not mapped to a transport are handled synchronously.
             InvokableMessage::class => [Transport::ASYNC],
             SendEmailMessage::class => [Transport::ASYNC],
             RedispatchMessage::class => [Transport::ASYNC],
+            SimpleEventWebhookDeliveryMessage::class => [Transport::ASYNC],
         ],
         senders: [
             Transport::ASYNC => new TransportConfigStruct(

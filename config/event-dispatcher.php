@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 use PhoneBurner\Pinch\Component\App\Event\ApplicationBootstrap;
 use PhoneBurner\Pinch\Component\App\Event\ApplicationTeardown;
+use PhoneBurner\Pinch\Component\HttpClient\Event\HttpClientRequestCompleted;
+use PhoneBurner\Pinch\Component\HttpClient\Event\HttpClientRequestFailed;
+use PhoneBurner\Pinch\Component\HttpClient\Event\HttpClientRequestStarted;
+use PhoneBurner\Pinch\Component\HttpClient\Event\WebhookDeliveryCompleted;
+use PhoneBurner\Pinch\Component\HttpClient\Event\WebhookDeliveryFailed;
+use PhoneBurner\Pinch\Component\HttpClient\Event\WebhookDeliveryStarted;
 use PhoneBurner\Pinch\Component\Logging\LogLevel;
-use PhoneBurner\Pinch\Component\MessageBus\Event\InvokableMessageHandlingComplete;
+use PhoneBurner\Pinch\Component\MessageBus\Event\InvokableMessageHandlingCompleted;
 use PhoneBurner\Pinch\Component\MessageBus\Event\InvokableMessageHandlingFailed;
-use PhoneBurner\Pinch\Component\MessageBus\Event\InvokableMessageHandlingStarting;
+use PhoneBurner\Pinch\Component\MessageBus\Event\InvokableMessageHandlingStarted;
 use PhoneBurner\Pinch\Framework\EventDispatcher\Config\EventDispatcherConfigStruct;
 use PhoneBurner\Pinch\Framework\MessageBus\EventListener\LogFailedInvokableMessageHandlingAttempt;
 use PhoneBurner\Pinch\Framework\MessageBus\EventListener\LogWorkerMessageFailedEvent;
@@ -58,8 +64,8 @@ return [
             FailureEvent::class => [],
 
             // Queue Job Events
-            InvokableMessageHandlingStarting::class => [],
-            InvokableMessageHandlingComplete::class => [],
+            InvokableMessageHandlingStarted::class => [],
+            InvokableMessageHandlingCompleted::class => [],
             InvokableMessageHandlingFailed::class => [
                 LogFailedInvokableMessageHandlingAttempt::class,
             ],
@@ -69,6 +75,16 @@ return [
             ConsoleErrorEvent::class => [],
             ConsoleSignalEvent::class => [],
             ConsoleTerminateEvent::class => [],
+
+            // HTTP Client Events
+            HttpClientRequestStarted::class => [],
+            HttpClientRequestCompleted::class => [],
+            HttpClientRequestFailed::class => [],
+
+            // Webhook Delivery Events
+            WebhookDeliveryStarted::class => [],
+            WebhookDeliveryCompleted::class => [],
+            WebhookDeliveryFailed::class => [],
 
             // Application Events & Listeners
         ],
