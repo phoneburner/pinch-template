@@ -7,6 +7,7 @@ namespace App;
 use PhoneBurner\Pinch\Component\App\App;
 use PhoneBurner\Pinch\Component\App\ServiceProvider;
 use PhoneBurner\Pinch\Component\Cache\Lock\LockFactory;
+use PhoneBurner\Pinch\Framework\App\Config\AppConfigStruct;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -18,12 +19,17 @@ class ApplicationServiceProvider implements ServiceProvider
 {
     public static function bind(): array
     {
-        return [];
+        return [AppConfigStruct::class => ApplicationConfigStruct::class];
     }
 
     #[\Override]
     public static function register(App $app): void
     {
+        $app->set(
+            ApplicationConfigStruct::class,
+            static fn(App $app): ApplicationConfigStruct => $app->config->get('app'),
+        );
+
         $app->set(
             ApplicationRouteProvider::class,
             static fn(App $app): ApplicationRouteProvider => new ApplicationRouteProvider(),

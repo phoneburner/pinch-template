@@ -1,4 +1,5 @@
-SHELL := bash
+SHELL := /bin/bash
+.ONESHELL:
 .SHELLFLAGS = -ec
 .DEFAULT_GOAL := build/.install
 .WAIT:
@@ -76,7 +77,8 @@ define confirm
 	fi
 endef
 
-BUILD_DIRS = build/.phpunit.cache \
+BUILD_DIRS = build \
+	build/.phpunit.cache \
 	build/composer \
 	build/docker \
 	build/phpstan \
@@ -92,16 +94,15 @@ BUILD_DIRS = build/.phpunit.cache \
 ##------------------------------------------------------------------------------
 
 build/docker/docker-compose.json: Dockerfile compose.yaml | build/docker
+	docker compose pull --quiet --ignore-buildable
 # Skip USER_UID and USER_GID on Mac OS to avoid compatibility issues
 ifeq ($(OS),Darwin)
-	docker compose pull --quiet --ignore-buildable
 	COMPOSE_BAKE=true docker compose build --pull
-	touch "$@" # required to consistently update the file mtime
 else
-	docker compose pull --quiet --ignore-buildable
 	COMPOSE_BAKE=true docker compose build --pull --build-arg USER_UID=$$(id -u) --build-arg USER_GID=$$(id -g)
-	touch "$@" # required to consistently update the file mtime
 endif
+	touch "$@" # required to consistently update the file mtime
+
 
 build/docker/%.json: | build/docker
 	@image=$(patsubst %/,%,$(dir $*)):$(notdir $*)
@@ -126,12 +127,6 @@ phpstan.neon:
 phpunit.xml:
 	@$(call copy-safe,phpunit.dist.xml,phpunit.xml)
 
-composer.lock vendor: build/composer build/docker/docker-compose.json composer.json | build .env
-	mkdir -p "$@"
-	@$(call check-token,GITHUB_TOKEN)
-	$(docker-php) composer install
-	@touch vendor composer.lock
-
 build/.install: $(BUILD_DIRS) build/docker/docker-compose.json vendor build/.migrations | .env phpunit.xml phpstan.neon resources/views/openapi.json resources/views/openapi.html
 	@$(call generate-key,PINCH_APP_KEY)
 	@echo "Application Build Complete."
@@ -140,6 +135,12 @@ build/.install: $(BUILD_DIRS) build/docker/docker-compose.json vendor build/.mig
 build/.migrations: database/migrations/*
 	docker compose up --detach --wait --wait-timeout=30
 	$(docker-php) pinch migrations:migrate --no-interaction && touch $@
+
+composer.lock vendor: build/composer build/docker/docker-compose.json composer.json | build .env
+	mkdir -p "$@"
+	@$(call check-token,GITHUB_TOKEN)
+	$(docker-php) composer install
+	@touch vendor composer.lock
 
 .PHONY: clean
 clean:
@@ -151,15 +152,19 @@ clean:
 ##------------------------------------------------------------------------------
 
 .PHONY: up
-up:
+up: build/docker/docker-compose.json
 	docker compose up --detach
 
 .PHONY: down
 down:
 	docker compose down --remove-orphans
 
+.PHONY: app-key
+app-key: | .env
+	@$(call generate-key,PINCH_APP_KEY)
+
 .PHONY: bash
-bash: build/docker/docker-compose.json
+bash: | build/docker/docker-compose.json
 	$(docker-php) bash
 
 # Run the PsySH REPL shell
@@ -199,7 +204,6 @@ serve-coverage:
 prettier-%: | build/.install
 	$(docker-run) --volume $${PWD}:/app --user=$$(id -u):$$(id -g) ghcr.io/phoneburner/pinch-prettier --$* .
 
-
 ##------------------------------------------------------------------------------
 # Redocly OpenAPI Validation and Documentation Generation
 ##-----------------------------------------------------------------------------_
@@ -219,7 +223,8 @@ resources/views/openapi.%: openapi.yaml redocly.yaml
 #
 # If a "build/Makefile" exists, it can define additional targets/behavior and/or
 # override the targets of this Makefile. Note that this declaration has to occur
-# at the end of the file in order to effect the override behavior.
+# at the end of the file in order to effect the override behavior. We also
+# support a local Makefile that can be used to override the build targets
 ##------------------------------------------------------------------------------
 
 -include build/Makefile
