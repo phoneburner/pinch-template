@@ -7,33 +7,80 @@ on:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
-    if: github.repository == 'phoneburner/pinch-template'
-    permissions:
-      contents: read
-      packages: write
-
+    # Uncomment and edit the following line to run this workflow only for a specific repository
+    # if: github.repository == 'phoneburner/pinch-template'
+    runs-on: ubuntu-latest`
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
-        if: github.repository == 'phoneburner/pinch-template'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
+      - name: Set Up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Configure Environment
+        id: configure_env
+        run: |
+          cp .env.dist .env;
+          sed -i "s/^GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" ".env";
+          sed -i "s%^PINCH_APP_KEY=.*%PINCH_APP_KEY=$(head -c 32 /dev/urandom | base64)%" ".env";
+          echo "uid=$(id -u)" >> $GITHUB_OUTPUT
+          echo "gid=$(id -g)" >> $GITHUB_OUTPUT
+
+      - name: Pull Docker Images
+        run: |
+          docker pull ghcr.io/phoneburner/pinch-prettier
+          docker pull redocly/cli
+          docker compose pull --quiet --ignore-buildable
+          mkdir -p build/docker;
+          touch build/.docker
+
+      - name: Bake Docker Images
+        uses: docker/bake-action@v6
+        with:
+          files: compose.yaml
+          pull: true
+          load: true
+          targets: php
+          set: |
+            php.args.USER_UID=${{ steps.configure_env.outputs.uid }}
+            php.args.USER_GID=${{ steps.configure_env.outputs.gid }}
+            php.cache-from=type=gha
+            php.cache-to=type=gha,mode=max
+
+      - name: Set Up Cache for Composer Dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/composer
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer
+
+      - name: Set Up Cache for PHPStan
+        uses: actions/cache@v4
+        with:
+          path: build/phpstan
+          key: ${{ runner.os }}-phpstan-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-phpstan
+
+      - name: Set Up Cache for Rector
+        uses: actions/cache@v4
+        with:
+          path: build/rector
+          key: ${{ runner.os }}-rector-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-rector
+
+      - name: Set Up Cache for PHP_CodeSniffer
+        uses: actions/cache@v4
+        with:
+          path: build/phpcs
+          key: ${{ runner.os }}-phpcs-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-phpcs
 
       - name: Build Application
         run: |
           cp .env.dist .env;
           sed -i "s/^GITHUB_TOKEN=.*/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" ".env";
           sed -i "s%^PINCH_APP_KEY=.*%PINCH_APP_KEY=$(head -c 32 /dev/urandom | base64)%" ".env";
-          make -j
+          make
 
       - name: Run Code Quality Checks
-        run: make ci;
+        run: make ci

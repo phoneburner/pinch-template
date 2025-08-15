@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App;
 
 use PhoneBurner\Pinch\Component\App\App;
+use PhoneBurner\Pinch\Component\App\ServiceFactory\NewInstanceServiceFactory;
 use PhoneBurner\Pinch\Component\App\ServiceProvider;
 use PhoneBurner\Pinch\Component\Cache\Lock\LockFactory;
 use PhoneBurner\Pinch\Framework\App\Config\AppConfigStruct;
@@ -30,10 +31,7 @@ class ApplicationServiceProvider implements ServiceProvider
             static fn(App $app): ApplicationConfigStruct => $app->config->get('app'),
         );
 
-        $app->set(
-            ApplicationRouteProvider::class,
-            static fn(App $app): ApplicationRouteProvider => new ApplicationRouteProvider(),
-        );
+        $app->set(ApplicationRouteProvider::class, NewInstanceServiceFactory::singleton());
 
         $app->set(
             ApplicationScheduleProvider::class,

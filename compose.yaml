@@ -20,6 +20,7 @@ services:
       - "${DOCKER_HOST_HTTP_PORT:-8888}:80"
 
   php:
+    image: pinch-template-php
     build:
       context: ./
       dockerfile: Dockerfile
