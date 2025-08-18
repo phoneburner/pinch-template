@@ -15,6 +15,8 @@ use PhoneBurner\Pinch\Component\MessageBus\Event\InvokableMessageHandlingComplet
 use PhoneBurner\Pinch\Component\MessageBus\Event\InvokableMessageHandlingFailed;
 use PhoneBurner\Pinch\Component\MessageBus\Event\InvokableMessageHandlingStarted;
 use PhoneBurner\Pinch\Framework\EventDispatcher\Config\EventDispatcherConfigStruct;
+use PhoneBurner\Pinch\Framework\Http\Event\LoopbackRequestHandled;
+use PhoneBurner\Pinch\Framework\Http\EventListener\WriteSerializedRequestToFile;
 use PhoneBurner\Pinch\Framework\MessageBus\EventListener\LogFailedInvokableMessageHandlingAttempt;
 use PhoneBurner\Pinch\Framework\MessageBus\EventListener\LogWorkerMessageFailedEvent;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
@@ -34,6 +36,8 @@ use Symfony\Component\Messenger\Event\WorkerStoppedEvent;
 use Symfony\Component\Scheduler\Event\FailureEvent;
 use Symfony\Component\Scheduler\Event\PostRunEvent;
 use Symfony\Component\Scheduler\Event\PreRunEvent;
+
+use function PhoneBurner\Pinch\Framework\stage;
 
 return [
     'event_dispatcher' => new EventDispatcherConfigStruct(
@@ -85,6 +89,13 @@ return [
             WebhookDeliveryStarted::class => [],
             WebhookDeliveryCompleted::class => [],
             WebhookDeliveryFailed::class => [],
+
+            LoopbackRequestHandled::class => stage(
+                production: [],
+                development: [
+                    WriteSerializedRequestToFile::class,
+                ],
+            ),
 
             // Application Events & Listeners
         ],

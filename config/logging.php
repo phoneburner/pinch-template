@@ -56,7 +56,7 @@ return [
                 new LoggingHandlerConfigStruct(
                     handler_class: StreamHandler::class,
                     handler_options: [
-                        'stream' => \sys_get_temp_dir() . '/pinch/pinch.log',
+                        'stream' => \sys_get_temp_dir() . '/pinch/pinch.jsonl',
                     ],
                     formatter_class: JsonFormatter::class,
                     level: LogLevel::instance(env('PINCH_PSR3_LOG_LEVEL', LogLevel::Debug)),
@@ -64,7 +64,7 @@ return [
                 new LoggingHandlerConfigStruct(
                     handler_class: RotatingFileHandler::class,
                     handler_options: [
-                        'filename' => path('/storage/logs/pinch.log'),
+                        'filename' => path('/storage/logs/pinch.jsonl'),
                         'max_files' => 7,
                     ],
                     formatter_class: JsonFormatter::class,

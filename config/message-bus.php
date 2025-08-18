@@ -13,6 +13,7 @@ use PhoneBurner\Pinch\Framework\MessageBus\Config\BusConfigStruct;
 use PhoneBurner\Pinch\Framework\MessageBus\Config\MessageBusConfigStruct;
 use PhoneBurner\Pinch\Framework\MessageBus\Config\TransportConfigStruct;
 use PhoneBurner\Pinch\Framework\MessageBus\Transport;
+use PhoneBurner\Pinch\Framework\MessageBus\TransportFactory\DoctrineTransportFactory;
 use Symfony\Component\Console\Messenger\RunCommandMessage;
 use Symfony\Component\Console\Messenger\RunCommandMessageHandler;
 use Symfony\Component\Mailer\Messenger\MessageHandler as EmailMessageHandler;
@@ -90,7 +91,7 @@ return [
                 class: DoctrineTransport::class,
                 connection: ConnectionFactory::DEFAULT,
                 options: [
-                    'table_name' => 'messenger_messages',
+                    'table_name' => DoctrineTransportFactory::DEFAULT_FAILED_MESSAGE_TABLE,
                     'queue_name' => 'failed',
                     'redeliver_timeout' => 3600,
                 ],

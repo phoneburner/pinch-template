@@ -11,3 +11,4 @@ composer.lock
 resources/views/openapi.*
 storage
 *.log
+*.jsonl
