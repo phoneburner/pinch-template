@@ -9,7 +9,7 @@ return [
     'http_client' => new HttpClientConfigStruct(
         webhooks: [
             new SimpleEventWebhookConfiguration(
-                uri: 'https://example.com/webhook/observations',
+                uri: 'http://web/loopback',
                 events: [],
             ),
         ],

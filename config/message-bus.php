@@ -7,6 +7,7 @@ use PhoneBurner\Pinch\Component\MessageBus\Message\InvokableMessage;
 use PhoneBurner\Pinch\Component\MessageBus\MessageBus;
 use PhoneBurner\Pinch\Framework\Database\Doctrine\ConnectionFactory;
 use PhoneBurner\Pinch\Framework\Database\Redis\RedisManager;
+use PhoneBurner\Pinch\Framework\HttpClient\Webhook\Message\HalResourceWebhookDeliveryMessage;
 use PhoneBurner\Pinch\Framework\HttpClient\Webhook\Message\SimpleEventWebhookDeliveryMessage;
 use PhoneBurner\Pinch\Framework\HttpClient\Webhook\MessageHandler\WebhookDeliveryMessageHandler;
 use PhoneBurner\Pinch\Framework\MessageBus\Config\BusConfigStruct;
@@ -22,6 +23,7 @@ use Symfony\Component\Messenger\Bridge\Doctrine\Transport\DoctrineTransport;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransport;
 use Symfony\Component\Messenger\Handler\RedispatchMessageHandler;
 use Symfony\Component\Messenger\Message\RedispatchMessage;
+use Symfony\Component\Messenger\Middleware\DispatchAfterCurrentBusMiddleware;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
 use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
 use Symfony\Component\Messenger\Retry\MultiplierRetryStrategy;
@@ -33,6 +35,7 @@ return [
         bus: [
             MessageBus::DEFAULT => new BusConfigStruct(
                 middleware: [
+                    DispatchAfterCurrentBusMiddleware::class,
                     SendMessageMiddleware::class,
                     HandleMessageMiddleware::class,
                 ],
@@ -57,12 +60,16 @@ return [
             SimpleEventWebhookDeliveryMessage::class => [
                 WebhookDeliveryMessageHandler::class,
             ],
+            HalResourceWebhookDeliveryMessage::class => [
+                WebhookDeliveryMessageHandler::class,
+            ],
         ],
         routing: [ // messages not mapped to a transport are handled synchronously.
             InvokableMessage::class => [Transport::ASYNC],
             SendEmailMessage::class => [Transport::ASYNC],
             RedispatchMessage::class => [Transport::ASYNC],
             SimpleEventWebhookDeliveryMessage::class => [Transport::ASYNC],
+            HalResourceWebhookDeliveryMessage::class => [Transport::ASYNC],
         ],
         senders: [
             Transport::ASYNC => new TransportConfigStruct(

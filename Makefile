@@ -124,7 +124,7 @@ else
 endif
 
 $(DOCKER_STAMP): $(DOCKER_COMPOSE_FILE) Dockerfile | .env $(BUILD_DIRS)
-	docker pull ghcr.io/phoneburner/pinch-prettier
+	docker pull ghcr.io/phoneburner/pinch-prettier --platform=$(DOCKER_PLATFORM)
 	docker pull redocly/cli
 	docker compose pull --quiet --ignore-buildable
 	docker buildx bake --pull --load \
