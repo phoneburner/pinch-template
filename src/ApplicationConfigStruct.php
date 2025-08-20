@@ -10,12 +10,20 @@ use PhoneBurner\Pinch\Component\Cryptography\Symmetric\SharedKey;
 use PhoneBurner\Pinch\Component\Cryptography\Symmetric\SymmetricAlgorithm;
 use PhoneBurner\Pinch\Component\I18n\IsoLocale;
 use PhoneBurner\Pinch\Framework\App\Config\AppConfigStruct;
+use PhoneBurner\Pinch\Framework\App\ErrorHandling\ErrorHandler;
+use PhoneBurner\Pinch\Framework\App\ErrorHandling\ExceptionHandler;
+use PhoneBurner\Pinch\Framework\App\ErrorHandling\NullErrorHandler;
+use PhoneBurner\Pinch\Framework\App\ErrorHandling\NullExceptionHandler;
 use PhoneBurner\Pinch\Time\TimeZone\Tz;
 
 class ApplicationConfigStruct implements AppConfigStruct
 {
     use ConfigStructArrayAccess;
 
+    /**
+     * @param class-string<ErrorHandler> $uncaught_error_handler
+     * @param class-string<ExceptionHandler> $uncaught_exception_handler
+     */
     public function __construct(
         public string $name,
         #[\SensitiveParameter] public SharedKey|null $key,
@@ -23,6 +31,8 @@ class ApplicationConfigStruct implements AppConfigStruct
         public IsoLocale $locale = IsoLocale::EN_US,
         public SymmetricAlgorithm $symmetric_algorithm = SymmetricAlgorithm::Aegis256,
         public AsymmetricAlgorithm $asymmetric_algorithm = AsymmetricAlgorithm::X25519Aegis256,
+        public string $uncaught_error_handler = NullErrorHandler::class,
+        public string $uncaught_exception_handler = NullExceptionHandler::class,
     ) {
     }
 
@@ -35,6 +45,8 @@ class ApplicationConfigStruct implements AppConfigStruct
             $this->locale,
             $this->symmetric_algorithm,
             $this->asymmetric_algorithm,
+            $this->uncaught_error_handler,
+            $this->uncaught_exception_handler,
         ];
     }
 
@@ -47,6 +59,8 @@ class ApplicationConfigStruct implements AppConfigStruct
             $data[3],
             $data[4],
             $data[5],
+            $data[6],
+            $data[7],
         );
     }
 }

@@ -8,6 +8,11 @@
 /.run
 /.vscode
 
+# Ignore Operating System Specific Files
+.DS_Store
+._*
+Thumbs.db
+
 # Ignore GitHub Actions and CI/CD Directories
 /.github
 

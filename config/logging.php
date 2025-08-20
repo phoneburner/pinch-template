@@ -8,6 +8,7 @@ use Monolog\Handler\RotatingFileHandler;
 use Monolog\Handler\SlackWebhookHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
+use Monolog\Processor\WebProcessor;
 use PhoneBurner\Pinch\Component\Logging\LogLevel;
 use PhoneBurner\Pinch\Framework\Logging\Config\LoggingConfigStruct;
 use PhoneBurner\Pinch\Framework\Logging\Config\LoggingHandlerConfigStruct;
@@ -29,11 +30,20 @@ return [
             PhoneNumberProcessor::class,
             EnvironmentProcessor::class,
             LogTraceProcessor::class,
+            WebProcessor::class,
             PsrLogMessageProcessor::class, // must be after any processors that mutate context
         ],
         // Configure Handlers By Build Stage
         handlers: stage(
             [
+                new LoggingHandlerConfigStruct(
+                    handler_class: StreamHandler::class,
+                    handler_options: [
+                        'stream' => 'php://stderr',
+                    ],
+                    formatter_class: JsonFormatter::class,
+                    level: LogLevel::Debug,
+                ),
                 new LoggingHandlerConfigStruct(
                     handler_class: ResettableLogglyHandler::class,
                     handler_options: [
@@ -47,6 +57,7 @@ return [
                     handler_options: [
                         'webhook_url' => (string)env('PINCH_SLACK_WEBHOOK_URL'),
                         'channel' => (string)env('PINCH_SLACK_DEFAULT_CHANNEL'),
+                        'include_context_and_extra' => true,
                     ],
                     formatter_class: LogglyFormatter::class,
                     level: LogLevel::Critical,
@@ -56,10 +67,10 @@ return [
                 new LoggingHandlerConfigStruct(
                     handler_class: StreamHandler::class,
                     handler_options: [
-                        'stream' => \sys_get_temp_dir() . '/pinch/pinch.jsonl',
+                        'stream' => 'php://stderr',
                     ],
                     formatter_class: JsonFormatter::class,
-                    level: LogLevel::instance(env('PINCH_PSR3_LOG_LEVEL', LogLevel::Debug)),
+                    level: LogLevel::Debug,
                 ),
                 new LoggingHandlerConfigStruct(
                     handler_class: RotatingFileHandler::class,
@@ -68,7 +79,7 @@ return [
                         'max_files' => 7,
                     ],
                     formatter_class: JsonFormatter::class,
-                    level: LogLevel::instance(env('PINCH_PSR3_LOG_LEVEL', LogLevel::Debug)),
+                    level: LogLevel::instance(env('PINCH_PSR3_LOG_LEVEL', LogLevel::Info)),
                 ),
             ],
         ),

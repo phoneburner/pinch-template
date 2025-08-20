@@ -9,7 +9,7 @@ jobs:
   ci:
     # Uncomment and edit the following line to run this workflow only for a specific repository
     # if: github.repository == 'phoneburner/pinch-template'
-    runs-on: ubuntu-latest`
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -47,33 +47,12 @@ jobs:
             php.cache-from=type=gha
             php.cache-to=type=gha,mode=max
 
-      - name: Set Up Cache for Composer Dependencies
+      - name: Set Up Cache for Composer Dependencies and Tooling
         uses: actions/cache@v4
         with:
-          path: build/composer
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer
-
-      - name: Set Up Cache for PHPStan
-        uses: actions/cache@v4
-        with:
-          path: build/phpstan
-          key: ${{ runner.os }}-phpstan-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-phpstan
-
-      - name: Set Up Cache for Rector
-        uses: actions/cache@v4
-        with:
-          path: build/rector
-          key: ${{ runner.os }}-rector-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-rector
-
-      - name: Set Up Cache for PHP_CodeSniffer
-        uses: actions/cache@v4
-        with:
-          path: build/phpcs
-          key: ${{ runner.os }}-phpcs-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-phpcs
+          path: build
+          key: ${{ runner.os }}-build-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-build
 
       - name: Build Application
         run: |

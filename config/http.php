@@ -9,6 +9,7 @@ use PhoneBurner\Pinch\Framework\Http\Config\HttpConfigStruct;
 use PhoneBurner\Pinch\Framework\Http\Config\RoutingConfigStruct;
 use PhoneBurner\Pinch\Framework\Http\Config\SessionConfigStruct;
 use PhoneBurner\Pinch\Framework\Http\Cookie\Middleware\ManageCookies;
+use PhoneBurner\Pinch\Framework\Http\Middleware\AddCorrelationIdHeaderToResponse;
 use PhoneBurner\Pinch\Framework\Http\Middleware\CatchExceptionalResponses;
 use PhoneBurner\Pinch\Framework\Http\Middleware\EvaluateWrappedResponseFactories;
 use PhoneBurner\Pinch\Framework\Http\Middleware\TransformHttpExceptionResponses;
@@ -43,6 +44,7 @@ return [
             add_xsrf_token_cookie: true,
         ),
         middleware: [
+            AddCorrelationIdHeaderToResponse::class,
             TransformHttpExceptionResponses::class,
             CatchExceptionalResponses::class,
             ManageCookies::class,
