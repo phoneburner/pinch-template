@@ -22,6 +22,8 @@ parameters:
         - identifier: method.internalClass
           path: 'tests/'
 
+    treatPhpDocTypesAsCertain: false
+
     # Strict Analysis
     # https://phpstan.org/config-reference#stricter-analysis
     checkDynamicProperties: true
@@ -35,7 +37,12 @@ parameters:
     reportMaybesInPropertyPhpDocTypes: true
     reportStaticMethodSignatures: true
     reportUnmatchedIgnoredErrors: false
-    treatPhpDocTypesAsCertain: false
+    reportPossiblyNonexistentGeneralArrayOffset: false
+    reportPossiblyNonexistentConstantArrayOffset: false
+    reportAlwaysTrueInLastCondition: false
+    reportWrongPhpDocTypeInVarTag: false
+    reportAnyTypeWideningInVarTag: false
+    checkMissingOverrideMethodAttribute: false # update to true when Rector supports improves
 
     # Extension: Disallowed Calls For PHPStan
     # https://github.com/spaze/phpstan-disallowed-calls
