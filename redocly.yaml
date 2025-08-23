@@ -19,9 +19,11 @@ openapi:
   expandSingleSchemaField: true
   expandResponses: 200,201,204
   theme:
+    spacing:
+      unit: 4
     logo:
       maxHeight: 100px
     sidebar:
-      width: 300px
+      width: 350px
     rightPanel:
-      width: 55%
+      width: 50%
